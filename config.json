@@ -1,0 +1,12 @@
+{
+    "retry": 15,
+    "path": "/data/sync",
+    "pattern": "_LED_",
+    "force": false,
+    "output": [1920, 1080],
+    "screens": 
+    {
+        "256": [256, 256, 0.5],
+        "512": [512, 512, 0.5]
+    } 
+}
