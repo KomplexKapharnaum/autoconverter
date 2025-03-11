@@ -135,7 +135,7 @@ function run() {
 
     processFolder(CONF.path);
     
-    console.log('DONE.\n');
+    console.log('\nDONE.\n');
     console.log('Waiting for next run in '+CONF.retry+' minutes (press key to trigger manually)');
     isRunning = false;
     scheduledRun = setTimeout(run, CONF.retry*60*1000);
