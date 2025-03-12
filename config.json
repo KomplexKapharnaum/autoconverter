@@ -1,12 +1,47 @@
 {
     "retry": 15,
     "path": "/data/sync",
-    "pattern": "_LED_",
     "force": false,
-    "output": [1920, 1080],
-    "screens": 
-    {
-        "256": [256, 256, 0.5],
-        "512": [512, 512, 0.5]
-    } 
+    "screens": [
+        {
+            "search": "_LED_",
+            "target": "_LED256_",
+            "resolution": [256, 512],
+            "h_scale": 1,
+            "v_scale": 0.5,
+            "player": [1920, 1080],
+            "align": "origin",
+            "force": false
+        },
+        {
+            "search": "_LED_",
+            "target": "_LED512_",
+            "resolution": [512, 1024],
+            "h_scale": 1,
+            "v_scale": 0.5,
+            "player": [1920, 1080],
+            "align": "origin",
+            "force": false
+        },
+        {
+            "search": "_LED_",
+            "target": "_LEDten_",
+            "resolution": [540, 1080],
+            "h_scale": 1.2,
+            "v_scale": 1,
+            "player": [1920, 1080],
+            "align": "center",
+            "force": false
+        },
+        {
+            "search": "_DREAD_",
+            "target": "_DREADO_",
+            "resolution": [50, 150],
+            "h_scale": 1,
+            "v_scale": 1,
+            "player": [50, 150],
+            "align": "center",
+            "force": false
+        }
+    ]
 }
