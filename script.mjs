@@ -69,7 +69,8 @@ loadConfig()
 
 // Find FFMPEG
 //
-var ffmpeg = 'ffmpeg';
+const ffmpeg = 'ffmpeg';
+const ffmpegEncodeArgs = '-c:v libx264 -profile:v main -level:v 4.1 -b:v 8M -maxrate 10M -bufsize 12M -tune fastdecode -g 50 -keyint_min 25 -metadata:s:v:0 "pixel_aspect=1/1" -movflags +faststart -x264-params "no-scenecut=1:nal-hrd=cbr" -pix_fmt yuv420p'
 
 // Convert file
 //
@@ -82,6 +83,8 @@ function processFile(filePath)
     console.log(`Processing file ${ path.dirname(filePath)} (${CONF.source}) in ${folder}`);
     if (!fs.existsSync(filePath)) return;
 
+    var noscreen = true;
+
     // process each screen
     for (const key in CONF.screens) 
     {
@@ -89,6 +92,8 @@ function processFile(filePath)
 
         // check if file match search string casse insensitive
         if (!filename.toLowerCase().includes(screen.search.toLowerCase())) continue;
+        noscreen = false;
+
         const outputFilename = filename.replace(new RegExp(screen.search, 'i'), screen.target);
 
         // Skip if target file already exists
@@ -123,8 +128,41 @@ function processFile(filePath)
             pad = `${screen.player[0]}:${screen.player[1]}:(ow-iw)/2:(oh-ih)/2:black`;
         
         // Execute
-        execSync(`ffmpeg -y -i "${filePath}" -vf "crop=${crop},scale=${scale},setsar=1/1,pad=${pad}" -c:a aac -b:a 128k -ar 44100 -c:v libx264 -profile:v main -level:v 4.1 -b:v 8M -maxrate 10M -bufsize 12M -tune fastdecode -g 50 -keyint_min 25 -metadata:s:v:0 "pixel_aspect=1/1" -movflags +faststart -x264-params "no-scenecut=1:nal-hrd=cbr" -pix_fmt yuv420p "${outputPath}"`);
+        execSync(`ffmpeg -y -i "${filePath}" -vf "crop=${crop},scale=${scale},setsar=1/1,pad=${pad}" ${ffmpegEncodeArgs} "${outputPath}"`);
         console.log(`Converted file ${outputFilename} in ${scale} pixels`);
+    }
+
+    // If no screen found
+    if (noscreen) 
+    {
+        if (CONF.noscreen && CONF.noscreen == 'copy') {
+            // Copy file to destination
+            const outputPath = path.join(CONF.destination, folder, filename);
+            if (fs.existsSync(outputPath) && !CONF.force) return;  
+            const outputFolder = path.dirname(outputPath);
+            if (!fs.existsSync(outputFolder)) {
+                fs.mkdirSync(outputFolder, { recursive: true });
+            }
+            fs.copyFileSync(filePath, outputPath);
+            console.log(`Copied file ${filename} to ${outputPath}`);
+        }
+
+        else if (CONF.noscreen && CONF.noscreen == 'convert') {
+            // Convert file to mp4
+            const outputFilename = filename.replace(/\.[^/.]+$/, ".mp4");
+            const outputPath = path.join(CONF.destination, folder, outputFilename);
+            if (fs.existsSync(outputPath) && !CONF.force) return;  
+            const outputFolder = path.dirname(outputPath);
+            if (!fs.existsSync(outputFolder)) {
+                fs.mkdirSync(outputFolder, { recursive: true });
+            }
+            execSync(`ffmpeg -y -i "${filePath}" ${ffmpegEncodeArgs} "${outputPath}"`);
+            console.log(`Converted file ${filename} to ${outputPath}`);
+        }
+            
+        else {
+            console.log(`No screen found for ${filename}.. SKIP`);
+        }
     }
 }
 
@@ -172,7 +210,10 @@ function run() {
         console.log(`${key.padEnd(10)}: ${JSON.stringify(CONF[key])}`);
     })
 
-    processFolder(CONF.source);
+    // clean destination folder
+    cleanDestination = function (source) {
+
+    processSource(CONF.source);
     
     console.log('\nDONE.\n');
     isRunning = false;

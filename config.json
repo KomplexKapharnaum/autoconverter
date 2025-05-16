@@ -3,6 +3,7 @@
     "source":       "/data/source",
     "destination":  "/data/target",
     "force": false,
+    "noscreen": "convert",
     "screens": [
         {
             "search": "_LED_",
