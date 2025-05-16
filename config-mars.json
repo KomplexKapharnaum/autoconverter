@@ -1,7 +1,6 @@
 {
     "retry": 15,
-    "source":       "/data/source",
-    "destination":  "/data/target",
+    "path": "/data/sync",
     "force": false,
     "screens": [
         {
@@ -22,6 +21,16 @@
             "v_scale": 0.5,
             "player": [1920, 1080],
             "align": "origin",
+            "force": false
+        },
+        {
+            "search": "_LED_",
+            "target": "_LEDten_",
+            "resolution": [540, 1080],
+            "h_scale": 1.2,
+            "v_scale": 1,
+            "player": [1920, 1080],
+            "align": "center",
             "force": false
         },
         {

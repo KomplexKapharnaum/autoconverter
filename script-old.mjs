@@ -55,14 +55,9 @@ function loadConfig()
         CONF.screens[key]['cropratio'] = CONF.screens[key]['resolution'][0] / CONF.screens[key]['resolution'][1]; 
     }
 
-    if (!CONF.source || !fs.existsSync(CONF.source)) {
-    console.error('You must set a valid "source" path in config.json');
+    if (!CONF.path || !fs.existsSync(CONF.path)) {
+    console.error('You must set a valid "path" in config.json');
     process.exit(1);
-    }
-
-    if (!CONF.destination || !fs.existsSync(CONF.destination)) {
-        console.error('You must set a valid "destination" path in config.json');
-        process.exit(1);
     }
 }
 loadConfig()
@@ -78,8 +73,7 @@ function processFile(filePath)
     // valid
     if (!filePath) return;
     const filename = path.basename(filePath);
-    const folder = path.dirname(filePath).replace(CONF.source, '')
-    console.log(`Processing file ${ path.dirname(filePath)} (${CONF.source}) in ${folder}`);
+    const folder = path.dirname(filePath);
     if (!fs.existsSync(filePath)) return;
 
     // process each screen
@@ -92,15 +86,8 @@ function processFile(filePath)
         const outputFilename = filename.replace(new RegExp(screen.search, 'i'), screen.target);
 
         // Skip if target file already exists
-        console.log(CONF.destination, folder, outputFilename);
-        const outputPath = path.join(CONF.destination, folder, outputFilename);
+        const outputPath = path.join(folder, outputFilename);
         if (fs.existsSync(outputPath) && !CONF.force && !screen.force) continue;  
-
-        // Make folder if not exists
-        const outputFolder = path.dirname(outputPath);
-        if (!fs.existsSync(outputFolder)) {
-            fs.mkdirSync(outputFolder, { recursive: true });
-        }
 
         console.log(`------\nConverting ${filePath} to ${outputPath}\n`);
         
@@ -130,11 +117,11 @@ function processFile(filePath)
 
 // Recursive folder processing
 //
-function processFolder(source) 
+function processFolder(folder) 
 {
-    fs.readdirSync(source).forEach(file => {
+    fs.readdirSync(folder).forEach(file => {
         
-        const filePath = path.join(source, file);
+        const filePath = path.join(folder, file);
         
         // ignore hidden / conflict files
         if (file.startsWith('.')) return;
@@ -172,7 +159,7 @@ function run() {
         console.log(`${key.padEnd(10)}: ${JSON.stringify(CONF[key])}`);
     })
 
-    processFolder(CONF.source);
+    processFolder(CONF.path);
     
     console.log('\nDONE.\n');
     isRunning = false;
