@@ -24,6 +24,16 @@
             "force": false
         },
         {
+            "search": "_LED_",
+            "target": "_LEDten_",
+            "resolution": [540, 1080],
+            "h_scale": 1.2,
+            "v_scale": 1,
+            "player": [1920, 1080],
+            "align": "center",
+            "force": false
+        },
+        {
             "search": "_DREAD_",
             "target": "_DREADO_",
             "resolution": [50, 150],
