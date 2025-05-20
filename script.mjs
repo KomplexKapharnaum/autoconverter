@@ -15,6 +15,7 @@ import { exit } from 'process';
 import readline from 'readline';
 
 var CONF;
+var SOURCEMETA = {}
 
 // CONFIG Load 
 //
@@ -80,10 +81,26 @@ function processFile(filePath)
     if (!filePath) return;
     const filename = path.basename(filePath);
     const folder = path.dirname(filePath).replace(CONF.source, '')
-    console.log(`Processing file ${ path.dirname(filePath)} (${CONF.source}) in ${folder}`);
+    console.log(`------\nProcessing file ${filePath}`);
     if (!fs.existsSync(filePath)) return;
 
     var noscreen = true;
+    var alreadyProcessed = false;
+
+    // if already processed, skip
+    for (const key in CONF.screens) 
+    {
+        const screen = CONF.screens[key];
+        if (filename.toLowerCase().includes(screen.target.toLowerCase())) {
+            alreadyProcessed = true;
+            break;
+        }
+    }
+    if (alreadyProcessed) {
+        console.log(`File ${filename} is an processed file.. SKIP`);
+        return;
+    }
+
 
     // process each screen
     for (const key in CONF.screens) 
@@ -96,10 +113,15 @@ function processFile(filePath)
 
         const outputFilename = filename.replace(new RegExp(screen.search, 'i'), screen.target);
 
-        // Skip if target file already exists
         console.log(CONF.destination, folder, outputFilename);
         const outputPath = path.join(CONF.destination, folder, outputFilename);
-        if (fs.existsSync(outputPath) && !CONF.force && !screen.force) continue;  
+        
+        // If target exists, check if force is set
+        if (fs.existsSync(outputPath) && !CONF.force && !screen.force) 
+        {
+            console.log(`File ${outputFilename} already exists.. SKIP`);
+            continue;
+        }  
 
         // Make folder if not exists
         const outputFolder = path.dirname(outputPath);
@@ -107,7 +129,7 @@ function processFile(filePath)
             fs.mkdirSync(outputFolder, { recursive: true });
         }
 
-        console.log(`------\nConverting ${filePath} to ${outputPath}\n`);
+        console.log(`-> Converting ${filePath} to ${outputPath}\n`);
         
         // Crop Ratio inside original file
         const ratio = screen.cropratio;
@@ -129,13 +151,15 @@ function processFile(filePath)
         
         // Execute
         execSync(`ffmpeg -y -i "${filePath}" -vf "crop=${crop},scale=${scale},setsar=1/1,pad=${pad}" ${ffmpegEncodeArgs} "${outputPath}"`);
-        console.log(`Converted file ${outputFilename} in ${scale} pixels`);
+        console.log(`== Converted file ${outputFilename} in ${scale} pixels`);
     }
 
     // If no screen found
     if (noscreen) 
     {
-        if (CONF.noscreen && CONF.noscreen == 'copy') {
+
+        // copy non mp4 files
+        if ((CONF.noscreen && CONF.noscreen == 'copy') || !filename.endsWith('.mp4')) {
             // Copy file to destination
             const outputPath = path.join(CONF.destination, folder, filename);
             if (fs.existsSync(outputPath) && !CONF.force) return;  
@@ -156,8 +180,9 @@ function processFile(filePath)
             if (!fs.existsSync(outputFolder)) {
                 fs.mkdirSync(outputFolder, { recursive: true });
             }
+            console.log(`-> Converting file ${filePath} to ${outputPath}`);
             execSync(`ffmpeg -y -i "${filePath}" ${ffmpegEncodeArgs} "${outputPath}"`);
-            console.log(`Converted file ${filename} to ${outputPath}`);
+            console.log(` == Converted file ${filename} to ${outputPath}`);
         }
             
         else {
@@ -168,7 +193,7 @@ function processFile(filePath)
 
 // Recursive folder processing
 //
-function processFolder(source) 
+function processSource(source) 
 {
     fs.readdirSync(source).forEach(file => {
         
@@ -179,9 +204,45 @@ function processFolder(source)
         if (file.includes('sync-conflict')) return;
 
         // process
-        if (fs.lstatSync(filePath).isDirectory()) processFolder(filePath);
+        if (fs.lstatSync(filePath).isDirectory()) processSource(filePath);
         else processFile(filePath);
     });
+}
+
+// Cleanup destination folder
+//
+function cleanDestination(dest)
+{
+    // Cleanup destination folder:
+    // if a destination folder exists but is not in the source folder, remove it
+    fs.readdirSync(dest).forEach(file => {
+        const filePath = path.join(dest, file);
+
+        console.log(`-- Checking file ${filePath}`);
+
+        var sourcePath = path.join(dest.replace(CONF.destination, CONF.source), file);
+
+        if (fs.lstatSync(filePath).isDirectory()) {
+            // check if folder is in source folder
+            if (!fs.existsSync(sourcePath)) {
+                console.log(`Removing folder ${filePath}`);
+                fs.rmSync(filePath, { recursive: true, force: true });
+            }
+            else cleanDestination(filePath);
+        }
+        else {
+            // replace target by source
+            for (const key in CONF.screens) {
+                const screen = CONF.screens[key];
+                sourcePath = sourcePath.replace(screen.target, screen.search);
+            }
+
+            if (!fs.existsSync(sourcePath)) {
+                console.log(`Removing file ${filePath}`, sourcePath);
+                fs.unlinkSync(filePath);
+            }
+        }
+    })
 }
 
 var isRunning = false;
@@ -210,9 +271,11 @@ function run() {
         console.log(`${key.padEnd(10)}: ${JSON.stringify(CONF[key])}`);
     })
 
-    // clean destination folder
-    cleanDestination = function (source) {
-
+    // Cleanup destination folder
+    cleanDestination(CONF.destination);
+    
+    // process all files in source
+    // skip existing target, skip source file if already a processed file, copy/convert if no screen found
     processSource(CONF.source);
     
     console.log('\nDONE.\n');
@@ -262,4 +325,3 @@ process.stdin.on('keypress', (str, key) => {
 })
 
 run();
-

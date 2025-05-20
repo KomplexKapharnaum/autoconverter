@@ -1,7 +1,7 @@
 {
     "retry": 15,
-    "source":       "/data/source",
-    "destination":  "/data/target",
+    "source":       "/data/prod",
+    "destination":  "/data/sync",
     "force": false,
     "noscreen": "convert",
     "screens": [
@@ -11,7 +11,7 @@
             "resolution": [256, 512],
             "h_scale": 1,
             "v_scale": 0.5,
-            "player": [1920, 1080],
+            "player": [800, 600],
             "align": "origin",
             "force": false
         },
@@ -21,7 +21,7 @@
             "resolution": [512, 1024],
             "h_scale": 1,
             "v_scale": 0.5,
-            "player": [1920, 1080],
+            "player": [800, 600],
             "align": "origin",
             "force": false
         },
