@@ -1,9 +1,8 @@
 {
-    "retry": 10,
-    "source":       "C:\\Users\\Tour_IA2\\Desktop\\CASA\\prod",
-    "destination":  "C:\\Users\\Tour_IA2\\Desktop\\CASA\\sync",
+    "retry": 15,
+    "source":       "/data/prod",
+    "destination":  "/data/sync",
     "force": false,
-    "ffmpeg": "C:\\Users\\Tour_IA2\\Desktop\\CASA\\ffmpeg.exe",
     "noscreen": "convert",
     "screens": [
         {

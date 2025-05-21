@@ -70,7 +70,7 @@ loadConfig()
 
 // Find FFMPEG
 //
-const ffmpeg = 'ffmpeg';
+const ffmpeg = CONF.ffmpeg || 'ffmpeg';
 const ffmpegEncodeArgs = '-c:v libx264 -profile:v main -level:v 4.1 -b:v 8M -maxrate 10M -bufsize 12M -tune fastdecode -g 50 -keyint_min 25 -metadata:s:v:0 "pixel_aspect=1/1" -movflags +faststart -x264-params "no-scenecut=1:nal-hrd=cbr" -pix_fmt yuv420p'
 
 // Convert file
@@ -133,11 +133,7 @@ function processFile(filePath)
         
         // Crop Ratio inside original file
         const ratio = screen.cropratio;
-        var crop = `\
-        w='if(gt(a,${ratio}),ih*${ratio},iw)':
-        h='if(gt(a,${ratio}),ih,iw/${ratio})':
-        x='(iw-min(iw,ih*${ratio}))/2':
-        y='(ih-min(ih,iw/${ratio}))/2'`
+        var crop = `w='if(gt(a,${ratio}),ih*${ratio},iw)':h='if(gt(a,${ratio}),ih,iw/${ratio})':x='(iw-min(iw,ih*${ratio}))/2':y='(ih-min(ih,iw/${ratio}))/2'`
         
         // Scale to target resolution
         const scale = screen.resolution[0]*CONF.screens[key]['h_scale'] + ':' + screen.resolution[1]*CONF.screens[key]['v_scale'];
@@ -150,7 +146,7 @@ function processFile(filePath)
             pad = `${screen.player[0]}:${screen.player[1]}:(ow-iw)/2:(oh-ih)/2:black`;
         
         // Execute
-        execSync(`ffmpeg -y -i "${filePath}" -vf "crop=${crop},scale=${scale},setsar=1/1,pad=${pad}" ${ffmpegEncodeArgs} "${outputPath}"`);
+        execSync(ffmpeg+` -y -i "${filePath}" -vf "crop=${crop},scale=${scale},setsar=1/1,pad=${pad}" ${ffmpegEncodeArgs} "${outputPath}"`);
         console.log(`== Converted file ${outputFilename} in ${scale} pixels`);
     }
 
@@ -181,7 +177,7 @@ function processFile(filePath)
                 fs.mkdirSync(outputFolder, { recursive: true });
             }
             console.log(`-> Converting file ${filePath} to ${outputPath}`);
-            execSync(`ffmpeg -y -i "${filePath}" ${ffmpegEncodeArgs} "${outputPath}"`);
+            execSync(ffmpeg+` -y -i "${filePath}" ${ffmpegEncodeArgs} "${outputPath}"`);
             console.log(` == Converted file ${filename} to ${outputPath}`);
         }
             
@@ -202,6 +198,7 @@ function processSource(source)
         // ignore hidden / conflict files
         if (file.startsWith('.')) return;
         if (file.includes('sync-conflict')) return;
+        if (file.includes('syncthing')) return;
 
         // process
         if (fs.lstatSync(filePath).isDirectory()) processSource(filePath);
